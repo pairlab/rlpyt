@@ -79,10 +79,15 @@ class SacAgent(BaseAgent):
         self.target_q2_model.to(self.device)
 
     def data_parallel(self):
-        super().data_parallel
-        DDP_WRAP = DDPC if self.device.type == "cpu" else DDP
-        self.q1_model = DDP_WRAP(self.q1_model)
-        self.q2_model = DDP_WRAP(self.q2_model)
+        super().data_parallel()
+        if self.device.type == "cpu":
+            self.q1_model = DDPC(self.q1_model)
+            self.q2_model = DDPC(self.q2_model)
+        else:
+            self.q1_model = DDP(self.q1_model,
+                device_ids=[self.device.index], output_device=self.device.index)
+            self.q2_model = DDP(self.q2_model,
+                device_ids=[self.device.index], output_device=self.device.index)
 
     def give_min_itr_learn(self, min_itr_learn):
         self.min_itr_learn = min_itr_learn  # From algo.
